@@ -17,6 +17,8 @@ public class App {
 
 	// The window handle
 	private long window;
+	private PointerBuffer monitors;
+	int defaultMonitor = 0;
 
 	public String getGreeting()
 	{
@@ -51,15 +53,31 @@ public class App {
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
 
-		// Create the window
-		window = glfwCreateWindow(300, 300, "Hello World!", NULL, NULL);
+		// get monitors
+		monitors = glfwGetMonitors();
+		System.out.println(monitors.capacity());
+		GLFWVidMode mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+		// Create the window, fullscreen initially
+		window = glfwCreateWindow(mode.width(), mode.height(), "Hello World!", glfwGetPrimaryMonitor(), NULL); // can make default monitor configurable
 		if ( window == NULL )
 			throw new RuntimeException("Failed to create the GLFW window");
+
+		
+
 
 		// Setup a key callback. It will be called every time a key is pressed, repeated or released.
 		glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
 			if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
 				glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
+			if ( key == GLFW_KEY_F4 && action == GLFW_PRESS){
+				long monitor = monitors.get((++defaultMonitor)%monitors.capacity());
+				GLFWVidMode vidMode = glfwGetVideoMode(monitor);
+				glfwSetWindowMonitor(window, monitor, vidMode.width() / 2, vidMode.height() / 2, vidMode.width(), vidMode.height(), vidMode.refreshRate());
+				glfwShowWindow(window); // Ensure window is visible
+    			glfwSwapBuffers(window); // Force redraw
+    			glfwPollEvents(); 
+			}
 		});
 
 		// Get the thread stack and push a new frame
@@ -72,7 +90,6 @@ public class App {
 
 			// Get the resolution of the primary monitor
 			GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-			System.out.println(glfwGetMonitors().capacity());
 
 			// Center the window
 			glfwSetWindowPos(
