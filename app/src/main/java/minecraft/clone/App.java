@@ -18,7 +18,7 @@ public class App {
 	// The window handle
 	private long window;
 	private PointerBuffer monitors;
-	int defaultMonitor = 0;
+	int currentMonitor = 0;
 
 	public String getGreeting()
 	{
@@ -63,23 +63,64 @@ public class App {
 		if ( window == NULL )
 			throw new RuntimeException("Failed to create the GLFW window");
 
-		
-
+		/* CALLBACKS */	
 
 		// Setup a key callback. It will be called every time a key is pressed, repeated or released.
 		glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
+			// movement
+			if ( key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
+				System.out.println("W");
+			}
+			if ( key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
+				System.out.println("A");
+			}
+			if ( key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
+				System.out.println("S");
+			}
+			if ( key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
+				System.out.println("D");
+			}
+
+
+			// meta?
 			if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
 				glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
-			if ( key == GLFW_KEY_F4 && action == GLFW_PRESS){
-				long monitor = monitors.get((++defaultMonitor)%monitors.capacity());
+			if ( key == GLFW_KEY_F4 && action == GLFW_PRESS){ // can shift this to a menu.
+				long monitor = monitors.get((++currentMonitor)%monitors.capacity());
 				GLFWVidMode vidMode = glfwGetVideoMode(monitor);
 				glfwSetWindowMonitor(window, monitor, vidMode.width() / 2, vidMode.height() / 2, vidMode.width(), vidMode.height(), vidMode.refreshRate());
-				glfwShowWindow(window); // Ensure window is visible
-    			glfwSwapBuffers(window); // Force redraw
-    			glfwPollEvents(); 
+				
 			}
 		});
 
+		glfwSetMouseButtonCallback(window, (window, button, action , mods) -> {
+			if ( button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE){
+				System.out.println("LEFT CLICK!");
+			}
+			else if ( button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
+			{
+				System.out.println("RIGHT CLICK!");
+			}
+		});
+
+		glfwSetScrollCallback(window, (window, xoffset, yoffset) -> {
+			System.out.println(Double.toString(xoffset) +" "+ Double.toString(yoffset));
+		});
+
+		// monitor connect/disconnect callback
+		glfwSetMonitorCallback((monitor, event) -> {
+			if ( event == GLFW_CONNECTED )
+				System.out.println("Secondary monitor connected!");
+			else if ( event == GLFW_DISCONNECTED ){
+				System.out.println("Secondary monitor disconnected!");
+			}
+		});
+
+		// glfwSetCursorEnterCallback(GLFW_NO_WINDOW_CONTEXT, null); //TODO: Implement this
+		glfwSetCursorPosCallback(window, (window, xpos, ypos) -> {
+			System.out.println("Pointer coordinates: "+Double.toString(xpos) +","+ Double.toString(ypos));
+		});
+		
 		// Get the thread stack and push a new frame
 		try ( MemoryStack stack = stackPush() ) {
 			IntBuffer pWidth = stack.mallocInt(1); // int*
@@ -97,11 +138,13 @@ public class App {
 				(vidmode.width() - pWidth.get(0)) / 2,
 				(vidmode.height() - pHeight.get(0)) / 2
 			);
+			glfwSetCursorPos(window, (pWidth.get(0)) / 2, (pHeight.get(0)) / 2); // center the cursor
+
 		} // the stack frame is popped automatically
 
 		// Make the OpenGL context current
 		glfwMakeContextCurrent(window);
-		// Enable v-sync
+		// Enable v-sync --> TODO: can add options for this
 		glfwSwapInterval(1);
 
 		// Make the window visible
