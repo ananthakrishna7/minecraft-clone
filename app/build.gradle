@@ -12,9 +12,13 @@ plugins {
 }
 project.ext.lwjglVersion = "3.3.6"
 project.ext.lwjglNatives = "natives-linux"
+project.ext.jomlVersion = "1.10.8"
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
+	maven {
+    url "https://oss.sonatype.org/content/repositories/snapshots/"
+  }
 }
 
 dependencies {
@@ -27,6 +31,9 @@ dependencies {
     implementation libs.guava
 
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+	// joml
+	implementation "org.joml:joml:${jomlVersion}"
 
 	implementation "org.lwjgl:lwjgl"
 	implementation "org.lwjgl:lwjgl-assimp"
